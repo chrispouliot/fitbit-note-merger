@@ -1,0 +1,18 @@
+<form action="/note" method="post" enctype="application/json">
+  <input type="text" name="note" placeholder="Notes"/>
+  <button type="submit">Submit</button>
+</form>
+
+<form action="/note" method="get">
+  <input type="submit" value="Display notes">
+</form>
+
+{% if response %}
+  <p>{{response}}</p>
+{% endif %}
+
+<ul>
+{% for note in notes %}
+  <li>Created: {{note.created_date}} Note: {{note.note}}</li>
+{% endfor %}
+</ul>

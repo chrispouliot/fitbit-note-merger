@@ -3,6 +3,7 @@ import os
 
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy_utils.types import ChoiceType
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
@@ -10,12 +11,20 @@ db = SQLAlchemy(app)
 
 
 class Note(db.Model):
+    classifier_choices = [
+        ('light', 'Light'),
+        ('moderate', 'Moderate'),
+        ('severe', 'Severe'),
+        ('important', 'Important'),
+    ]
+
     id = db.Column(db.Integer, primary_key=True)
-    note = db.Column(db.String(250))
+    text = db.Column(db.String(250))
+    classifier = db.Column(ChoiceType(classifier_choices))
     created_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     def __repr__(self):
-        return '<Note %r %r>' % (self.created_date, self.note)
+        return '<Note %r %r>' % (self.created_date, self.text)
 
 
 @app.errorhandler(Exception)
@@ -30,11 +39,15 @@ def index():
 
 @app.route('/note', methods=['POST'])
 def create_note():
-    note = request.form.get('note')
-    if not note:
-        return render_template('index.html', response="No note provided")
+    text = request.form.get('note')
+    classifier = request.form.get('classifier')
+    if not text:
+        return render_template('index.html', response="No text provided")
+    # TODO: Model doesnt seem to validate?
+    if classifier and classifier not in Note.classifier_choices:
+            return render_template('index.html', response="Invalid classifier")
 
-    note = Note(note=note)
+    note = Note(text=text, classifier=classifier)
     db.session.add(note)
     db.session.commit()
 

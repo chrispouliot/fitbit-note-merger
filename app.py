@@ -44,7 +44,7 @@ def create_note():
     if not text:
         return render_template('index.html', response="No text provided")
     # TODO: Model doesnt seem to validate?
-    if classifier and classifier not in Note.classifier_choices:
+    if classifier and classifier not in [choices[0] for choices in Note.classifier_choices]:
             return render_template('index.html', response="Invalid classifier")
 
     note = Note(text=text, classifier=classifier)

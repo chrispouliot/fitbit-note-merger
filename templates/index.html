@@ -1,24 +1,33 @@
-<form action="/note" method="post" enctype="application/json">
-  <input type="text" name="note" placeholder="Notes"/>
-  <select name="classifier"> 
-    <option value="light" selected>Light</option> 
-    <option value="moderate">Moderate</option>
-    <option value="severe">Severe</option>
-    <option value="important">Important</option>
-  </select>
-  <button type="submit">Submit</button>
-</form>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <form action="/note" method="post" enctype="application/json">
+      <input type="text" name="note" placeholder="Notes"/>
+      <select name="classifier"> 
+        <option value="light" selected>Light</option> 
+        <option value="moderate">Moderate</option>
+        <option value="severe">Severe</option>
+        <option value="important">Important</option>
+      </select>
+      <button type="submit">Submit</button>
+    </form>
 
-<form action="/note" method="get">
-  <input type="submit" value="Display notes">
-</form>
+    <form action="/note" method="get">
+      <input type="submit" value="Display notes">
+    </form>
 
-{% if response %}
-  <p>{{response}}</p>
-{% endif %}
+    {% if response %}
+      <p>{{response}}</p>
+    {% endif %}
 
-<ul>
-{% for note in notes %}
-  <li>Created: {{note.created_date}} Note: {{note.text}} Classifier: {{note.classifier.value}}</li>
-{% endfor %}
-</ul>
+    <ul>
+    {% for note in notes %}
+      <li>Created: {{note.created_date}} Note: {{note.text}} Classifier: {{note.classifier.value}}</li>
+    {% endfor %}
+    </ul>
+
+  </body>
+</html>

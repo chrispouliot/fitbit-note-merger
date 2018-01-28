@@ -1,30 +1,7 @@
-import datetime
-import os
+from flask import render_template, request
 
-from flask import Flask, render_template, request
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy_utils.types import ChoiceType
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
-db = SQLAlchemy(app)
-
-
-class Note(db.Model):
-    classifier_choices = [
-        ('light', 'Light'),
-        ('moderate', 'Moderate'),
-        ('severe', 'Severe'),
-        ('important', 'Important'),
-    ]
-
-    id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.String(250))
-    classifier = db.Column(ChoiceType(classifier_choices))
-    created_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-
-    def __repr__(self):
-        return '<Note %r %r>' % (self.created_date, self.text)
+from db import db, Note
+from config import app, port
 
 
 @app.errorhandler(Exception)
@@ -61,5 +38,4 @@ def list_notes():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=True)

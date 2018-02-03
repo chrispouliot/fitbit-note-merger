@@ -1,7 +1,8 @@
-from flask import render_template, request
+from flask import render_template, redirect, request, session
 
 from db import db, Note
 from config import app, port
+from fitbit import get_authorize_url
 
 
 @app.errorhandler(Exception)
@@ -11,6 +12,14 @@ def error(error):
 
 @app.route('/')
 def index():
+    # make middleware redirect to /login and do this there?
+    return redirect(get_authorize_url(), code=302)
+    # returnrender_template('index.html')
+
+
+@app.route('/auth_callback/<code>', methods=['GET'])
+def auth_callback(code):
+    print(code)
     return render_template('index.html')
 
 

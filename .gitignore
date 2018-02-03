@@ -1,3 +1,4 @@
 .python-version
 .vscode
+.run
 __pycache__

@@ -23,9 +23,9 @@
       <p>{{response}}</p>
     {% endif %}
 
-    <ul>
+    <ul style="list-style: none;">
     {% for note in notes %}
-      <li>Created: {{note.created_date}} Note: {{note.text}} Classifier: {{note.classifier.value}}</li>
+      <li style="margin: 0.75em;">{{note.created_date.strftime('%b %d - %I:%M %Z')}} Note: {{note.text}} ({{note.classifier.value}})</li>
     {% endfor %}
     </ul>
 

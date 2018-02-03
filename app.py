@@ -1,25 +1,26 @@
 from flask import render_template, redirect, request, session
 
-from db import db, Note
+from db import Note
 from config import app, port
-from fitbit import get_authorize_url
+from fitbit import complete_auth, get_authorize_url, get_food_log
 
 
-@app.errorhandler(Exception)
+# @app.errorhandler(Exception)
 def error(error):
+    print(error)
     return render_template('index.html', response="An error occured: {}".format(error))
 
 
 @app.route('/')
 def index():
-    # make middleware redirect to /login and do this there?
-    return redirect(get_authorize_url(), code=302)
-    # returnrender_template('index.html')
+    if 'user_id' not in session:
+        return redirect(get_authorize_url())
+    return render_template('index.html')
 
 
-@app.route('/auth_callback/<code>', methods=['GET'])
-def auth_callback(code):
-    print(code)
+@app.route('/auth_callback')
+def auth_callback():
+    session['user_id'] = complete_auth(request.args.get('code'))
     return render_template('index.html')
 
 
@@ -33,17 +34,19 @@ def create_note():
     if classifier and classifier not in [choices[0] for choices in Note.classifier_choices]:
             return render_template('index.html', response="Invalid classifier")
 
-    note = Note(text=text, classifier=classifier)
-    db.session.add(note)
-    db.session.commit()
-
+    Note.create_note(text, classifier)
     return render_template('index.html', response="Note created")
 
 
-@app.route('/note', methods=['GET'])
+@app.route('/note')
 def list_notes():
-    notes = Note.query.all()
-    return render_template('index.html', response="Retrieved notes", notes=notes)
+    return render_template('index.html', response="Retrieved notes", notes=Note.list_notes())
+
+
+@app.route('/food')
+def list_food():
+    food_log = get_food_log(session.get('user_id'), session.get('access_token'))
+    return render_template('index.html', response="Retrieved food log", food=food_log)
 
 
 if __name__ == "__main__":

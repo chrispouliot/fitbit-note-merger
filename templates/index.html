@@ -19,6 +19,10 @@
       <input type="submit" value="Display notes">
     </form>
 
+    <form action="/food" method = "get">
+      <input type="submit" name="food_log" value="Get Food Log" />
+    </form>
+
     {% if response %}
       <p>{{response}}</p>
     {% endif %}
@@ -28,6 +32,8 @@
       <li style="margin: 0.75em;">{{note.created_date.strftime('%b %d - %I:%M %Z')}} Note: {{note.text}} ({{note.classifier.value}})</li>
     {% endfor %}
     </ul>
+
+    {{food}}
 
   </body>
 </html>

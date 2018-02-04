@@ -45,7 +45,7 @@ def list_notes():
 
 @app.route('/food')
 def list_food():
-    food_log = get_food_log(session.get('user_id'), session.get('access_token'))
+    food_log = get_food_log(session.get('user_id'))
     return render_template('index.html', response="Retrieved food log", food=food_log)
 
 

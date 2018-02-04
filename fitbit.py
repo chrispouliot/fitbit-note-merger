@@ -6,6 +6,7 @@ from urllib.parse import urlencode, quote_plus
 
 from config import fitbit_client_id, fitbit_client_secret
 from db import Auth
+from serializers import DailyFoodlogSerializer
 
 food_api_url = 'https://api.fitbit.com/1/user/{user_id}/foods/log/date/{date}.json'
 access_token_url = 'https://api.fitbit.com/oauth2/token'
@@ -56,6 +57,7 @@ def complete_auth(auth_code):
 
 def refresh_token():
     refresh_token = Auth.get_refresh_token()
+    print("Sending refresh token {}".format(refresh_token))
     r = requests.post(
         access_token_url,
         auth=(fitbit_client_id, fitbit_client_secret),
@@ -66,7 +68,7 @@ def refresh_token():
     )
     if r.status_code > 400:
         raise FitbitError("We did a wrong! code:{} '{}'".format(r.status_code, r.text))
-
+    print(r.json())
     # TODO: This code is all duplicated
     json = r.json()
     expires_in = json.get('expires_in')
@@ -83,7 +85,7 @@ def refresh_token():
 def get_food_log(user_id, retry_count=0):
     auth_token = Auth.get_access_token()
     # TODO: Support more than just todays food log. Also not just PST
-    today = datetime.datetime.now(pytz.PST).strftime('%Y-%m-%d')
+    today = datetime.datetime.now(tz=pytz.utc).astimezone(pytz.timezone('US/Pacific')).strftime('%Y-%m-%d')
     url = food_api_url.format(user_id=user_id, date=today)
     headers = {"Authorization": "Bearer {}".format(auth_token)}
 
@@ -95,5 +97,4 @@ def get_food_log(user_id, retry_count=0):
             return get_food_log(user_id, retry_count=1)
         raise FitbitError("We did a wrong! code:{} '{}'".format(r.status_code, r.text))
 
-    # TODO: Make serializers
-    return r.json()
+    return DailyFoodlogSerializer.from_json(r.json())

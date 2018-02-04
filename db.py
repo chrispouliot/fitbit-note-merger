@@ -33,8 +33,8 @@ class Note(db.Model):
         db.session.commit()
 
     @staticmethod
-    def list_notes():
-        return Note.query.all()
+    def list_notes(days=3):
+        return Note.query.filter(Note.created_date > datetime.datetime.now() - datetime.timedelta(days=days))
 
 
 class Auth(object):

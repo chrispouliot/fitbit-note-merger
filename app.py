@@ -5,7 +5,7 @@ from config import app, port
 from fitbit import complete_auth, get_authorize_url, get_food_log
 
 
-# @app.errorhandler(Exception)
+@app.errorhandler(Exception)
 def error(error):
     print(error)
     return render_template('index.html', response="An error occured: {}".format(error))

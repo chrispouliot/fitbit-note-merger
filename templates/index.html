@@ -35,8 +35,11 @@
 
     {% if food %} 
       <ul style="list-style: none;">
-      {% for food_log in food.food_logs %}
-        <li style="margin: 0.75em;">{{food_log.meal}}: {{food_log.unit['amount']}} {{food_log.unit['plural']}} {{food_log.name}} ({{food_log.calories}} calories)</li>
+      {% for meal, food_logs in food.meals.items() %}
+        <li>{{meal}}:</li>
+        {% for food_log in food_logs %}
+          <li style="margin: 0.75em;">{{food_log.unit['amount']}} {{food_log.unit['plural']}} {{food_log.name}} ({{food_log.calories}} calories)</li>
+        {% endfor %}
       {% endfor %}
       </ul>
       <h2>Summary</h2>

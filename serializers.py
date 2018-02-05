@@ -59,7 +59,8 @@ class FoodLogSerializer(object):
 
 
 class DailyFoodlogSerializer(object):
-    food_logs = []
+    food_logs = []  # Unordered FoodLog objects
+    meals = {meal_name: [] for meal_name in FoodLogSerializer.MEAL_MAP.values()}  # {'Breakfast': [], ...}
     summary = {
         'calories': 0,
         'carbs': 0,
@@ -69,15 +70,23 @@ class DailyFoodlogSerializer(object):
         'sodium': 0,
     }
 
-    def __init__(self, food_logs, summary):
+    def __init__(self, food_logs, meals, summary):
         self.food_logs = food_logs
+        self.meals = meals
         self.summary = summary
 
     @staticmethod
     def from_json(json):
         summary = json.get('summary', {})
         summary.pop('water', None)
+
+        food_logs = [FoodLogSerializer.from_json(log_json['loggedFood']) for log_json in json['foods']]
+        meals = {}
+        for fl in food_logs:
+            meals.setdefault(fl.meal, []).append(fl)
+
         return DailyFoodlogSerializer(
-            food_logs=[FoodLogSerializer.from_json(log_json['loggedFood']) for log_json in json['foods']],
+            food_logs=food_logs,
+            meals=meals,
             summary=summary,
         )

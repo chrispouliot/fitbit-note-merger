@@ -15,43 +15,48 @@
       <button type="submit">Submit</button>
     </form>
 
-    <form action="/note" method="get">
-      <input type="submit" value="Display notes">
-    </form>
-
-    <form action="/food" method = "get">
-      <input type="submit" name="food_log" value="Get Food Log" />
-    </form>
-
     {% if response %}
       <p>{{response}}</p>
     {% endif %}
 
-    <ul style="list-style: none;">
-    {% for note in notes %}
-      <li style="margin: 0.75em;">{{note.created_date.strftime('%b %d - %I:%M %Z')}} Note: {{note.text}} ({{note.classifier.value}})</li>
-    {% endfor %}
-    </ul>
-
-    {% if food %} 
-      <ul style="list-style: none;">
-      {% for meal, food_logs in food.meals.items() %}
-        <li>{{meal}}:</li>
-        {% for food_log in food_logs %}
-          <li style="margin: 0.75em;">{{food_log.unit['amount']}} {{food_log.unit['plural']}} {{food_log.name}} ({{food_log.calories}} calories)</li>
+    <div style="display: flex;">
+      <div style="flex: 1;">
+        <ul style="list-style: none;">
+        {% for meal, food_logs in food.meals.items() %}
+          <li><h4>{{meal}}:</h4></li>
+          {% for food_log in food_logs %}
+            <li style="margin: 0.75em;">{{food_log.name}} <span style="font-size: 50%;float: right;">({{food_log.calories}} calories, {{food_log.unit['amount']}}{{food_log.unit['plural']}})</span></li>
+          {% endfor %}
         {% endfor %}
-      {% endfor %}
-      </ul>
-      <h2>Summary</h2>
-      <ul style="list-style: none;"> 
-        <li>Fat: {{food.summary['fat']}}</li>
-        <li>Protein: {{food.summary['protein']}}</li>
-        <li>Carbs: {{food.summary['carbs']}}</li>
-        <li>Fiber: {{food.summary['fiber']}}</li>
-        <li>Sodium: {{food.summary['sodium']}}</li>
-        <li>Calories: {{food.summary['calories']}}</li>
-      </ul>
-    {% endif %}
+        </ul>
+        <h2>Summary</h2>
+        <ul style="list-style: none;width: 50%"> 
+          <li>Fat: <span style="float:right;">{{food.summary['fat']|round}}g</span></li>
+          <li>Protein: <span style="float:right;">{{food.summary['protein']|round}}g</span></li>
+          <li>Carbs: <span style="float:right;">{{food.summary['carbs']|round}}g</span></li>
+          <li>Fiber: <span style="float:right;">{{food.summary['fiber']|round}}g</span></li>
+          <li>Sodium: <span style="float:right;">{{food.summary['sodium']|round}}mg</span></li>
+          <li>Calories: <span style="float:right;">{{food.summary['calories']|round}}</span></li>
+        </ul>
+      </div>
+
+      <div style="flex: 0 0 65%;">
+        <ul style="list-style: none;">
+        {% for note in notes %}
+          {% if note.classifier.value == "Moderate" %}
+            {% set style="color: orange;"%}
+          {% elif note.classifier.value == "Severe" %}
+            {% set style="color: red;"%}
+          {% elif note.classifier.value == "Important" %}
+            {% set style="color: blue;"%}
+          {% else %}
+            {% set style="" %}
+          {% endif %}
+          <li style="margin: 0.75em;">{{note.created_date.strftime('%b %d - %I:%M %Z')}} Note: {{note.text}} <span style="{{style}}">({{note.classifier.value}})</span></li>
+        {% endfor %}
+        </ul>
+      </div>
+    </div>
 
   </body>
 </html>

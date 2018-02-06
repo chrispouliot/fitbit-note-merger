@@ -15,13 +15,15 @@ def error(error):
 def index():
     if 'user_id' not in session:
         return redirect(get_authorize_url())
-    return render_template('index.html')
+    food_log = get_food_log(session.get('user_id'))
+    notes = Note.list_notes()
+    return render_template('index.html', food=food_log, notes=notes)
 
 
 @app.route('/auth_callback')
 def auth_callback():
     session['user_id'] = complete_auth(request.args.get('code'))
-    return render_template('index.html')
+    return redirect('/')
 
 
 @app.route('/note', methods=['POST'])
@@ -35,18 +37,12 @@ def create_note():
             return render_template('index.html', response="Invalid classifier")
 
     Note.create_note(text, classifier)
-    return render_template('index.html', response="Note created")
-
-
-@app.route('/note')
-def list_notes():
-    return render_template('index.html', response="Retrieved notes", notes=Note.list_notes())
+    return redirect('/')
 
 
 @app.route('/food')
 def list_food():
-    food_log = get_food_log(session.get('user_id'))
-    return render_template('index.html', response="Retrieved food log", food=food_log)
+    return redirect('/')
 
 
 if __name__ == "__main__":

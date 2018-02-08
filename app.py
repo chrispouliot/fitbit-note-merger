@@ -8,7 +8,7 @@ from fitbit import complete_auth, get_authorize_url, get_food_log
 @app.errorhandler(Exception)
 def error(error):
     print(error)
-    return render_template('index.html', response="An error occured: {}".format(error))
+    return render_template('index.html', response="An error occured: {}".format(error), food=None, notes=None)
 
 
 @app.route('/')
@@ -36,12 +36,7 @@ def create_note():
     if classifier and classifier not in [choices[0] for choices in Note.classifier_choices]:
             return render_template('index.html', response="Invalid classifier")
 
-    Note.create_note(text, classifier)
-    return redirect('/')
-
-
-@app.route('/food')
-def list_food():
+    Note.save(text, classifier)
     return redirect('/')
 
 

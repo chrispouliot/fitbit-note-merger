@@ -42,21 +42,24 @@ def complete_auth(auth_code):
         raise FitbitError("We did a wrong! code:{} '{}'".format(r.status_code, r.text))
 
     json = r.json()
+    user_id = json.get('user_id')
     expires_in = json.get('expires_in')
     now = datetime.datetime.now()
     expiry_date = now + datetime.timedelta(seconds=expires_in)
 
     Auth.save(
+        user_id=user_id,
         access_token=json.get('access_token'),
         refresh_token=json.get('refresh_token'),
-        expiry=expiry_date.timestamp(),
+        expiry_date=expiry_date.timestamp(),
     )
 
-    return json.get('user_id')
+    return user_id
 
 
-def refresh_token():
-    refresh_token = Auth.get_refresh_token()
+def refresh_token(user_id):
+    # TODO: Check if auth exists
+    refresh_token = Auth.get_auth(user_id=user_id).refresh_token
     print("Sending refresh token {}".format(refresh_token))
     r = requests.post(
         access_token_url,
@@ -66,7 +69,7 @@ def refresh_token():
             'refresh_token': refresh_token,
         }
     )
-    if r.status_code > 400:
+    if r.status_code >= 400:
         raise FitbitError("We did a wrong! code:{} '{}'".format(r.status_code, r.text))
     print(r.json())
     # TODO: This code is all duplicated
@@ -76,24 +79,25 @@ def refresh_token():
     expiry_date = now + datetime.timedelta(seconds=expires_in)
 
     Auth.save(
+        user_id=user_id,
         access_token=json.get('access_token'),
         refresh_token=json.get('refresh_token'),
-        expiry=expiry_date.timestamp(),
+        expiry_date=expiry_date.timestamp(),
     )
 
 
 def get_food_log(user_id, retry_count=0):
-    auth_token = Auth.get_access_token()
+    access_token = Auth.get_auth(user_id).access_token
     # TODO: Support more than just todays food log. Also not just PST
     today = datetime.datetime.now(tz=pytz.utc).astimezone(pytz.timezone('US/Pacific')).strftime('%Y-%m-%d')
     url = food_api_url.format(user_id=user_id, date=today)
-    headers = {"Authorization": "Bearer {}".format(auth_token)}
+    headers = {"Authorization": "Bearer {}".format(access_token)}
 
     r = requests.get(url, headers=headers)
-    if r.status_code > 400:
+    if r.status_code >= 400:
         if r.status_code == 401 and retry_count < 2:
             print('Expired access token.. refreshing')
-            refresh_token()
+            refresh_token(user_id)
             return get_food_log(user_id, retry_count=1)
         raise FitbitError("We did a wrong! code:{} '{}'".format(r.status_code, r.text))
 

@@ -22,39 +22,43 @@
     <div style="display: flex;">
       <div style="flex: 1;">
         <ul style="list-style: none;">
-        {% for meal, food_logs in food.meals.items() %}
-          <li><h4>{{meal}}:</h4></li>
-          {% for food_log in food_logs %}
-            <li style="margin: 0.75em;">{{food_log.name}} <span style="font-size: 50%;float: right;">({{food_log.calories}} calories, {{food_log.unit['amount']}}{{food_log.unit['plural']}})</span></li>
-          {% endfor %}
-        {% endfor %}
-        </ul>
-        <h2>Summary</h2>
-        <ul style="list-style: none;width: 50%"> 
-          <li>Fat: <span style="float:right;">{{food.summary['fat']|round}}g</span></li>
-          <li>Protein: <span style="float:right;">{{food.summary['protein']|round}}g</span></li>
-          <li>Carbs: <span style="float:right;">{{food.summary['carbs']|round}}g</span></li>
-          <li>Fiber: <span style="float:right;">{{food.summary['fiber']|round}}g</span></li>
-          <li>Sodium: <span style="float:right;">{{food.summary['sodium']|round}}mg</span></li>
-          <li>Calories: <span style="float:right;">{{food.summary['calories']|round}}</span></li>
-        </ul>
+          {% if food %}
+            {% for meal, food_logs in food.meals.items() %}
+              <li><h4>{{meal}}:</h4></li>
+              {% for food_log in food_logs %}
+                <li style="margin: 0.75em;">{{food_log.name}} <span style="font-size: 50%;float: right;">({{food_log.calories}} calories, {{food_log.unit['amount']}}{{food_log.unit['plural']}})</span></li>
+              {% endfor %}
+            {% endfor %}
+            </ul>
+            <h2>Summary</h2>
+            <ul style="list-style: none;width: 50%"> 
+              <li>Fat: <span style="float:right;">{{food.summary['fat']|round}}g</span></li>
+              <li>Protein: <span style="float:right;">{{food.summary['protein']|round}}g</span></li>
+              <li>Carbs: <span style="float:right;">{{food.summary['carbs']|round}}g</span></li>
+              <li>Fiber: <span style="float:right;">{{food.summary['fiber']|round}}g</span></li>
+              <li>Sodium: <span style="float:right;">{{food.summary['sodium']|round}}mg</span></li>
+              <li>Calories: <span style="float:right;">{{food.summary['calories']|round}}</span></li>
+            </ul>
+          {% endif %}
       </div>
 
       <div style="flex: 0 0 65%;">
-        <ul style="list-style: none;">
-        {% for note in notes %}
-          {% if note.classifier.value == "Moderate" %}
-            {% set style="color: orange;"%}
-          {% elif note.classifier.value == "Severe" %}
-            {% set style="color: red;"%}
-          {% elif note.classifier.value == "Important" %}
-            {% set style="color: blue;"%}
-          {% else %}
-            {% set style="" %}
-          {% endif %}
-          <li style="margin: 0.75em;">{{note.created_date.strftime('%b %d - %I:%M %Z')}} Note: {{note.text}} <span style="{{style}}">({{note.classifier.value}})</span></li>
-        {% endfor %}
-        </ul>
+        {% if notes %}
+          <ul style="list-style: none;">
+            {% for note in notes %}
+              {% if note.classifier.value == "Moderate" %}
+                {% set style="color: orange;"%}
+              {% elif note.classifier.value == "Severe" %}
+                {% set style="color: red;"%}
+              {% elif note.classifier.value == "Important" %}
+                {% set style="color: blue;"%}
+              {% else %}
+                {% set style="" %}
+              {% endif %}
+              <li style="margin: 0.75em;">{{note.created_date.strftime('%b %d - %I:%M %Z')}} Note: {{note.text}} <span style="{{style}}">({{note.classifier.value}})</span></li>
+            {% endfor %}
+          </ul>
+        {% endif %}
       </div>
     </div>
 

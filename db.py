@@ -4,6 +4,7 @@ import datetime
 from flask import session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_utils.types import ChoiceType
+from sqlalchemy.orm.exc import NoResultFound
 
 from config import app
 
@@ -27,7 +28,7 @@ class Note(db.Model):
         return '<Note %r %r>' % (self.created_date, self.text)
 
     @staticmethod
-    def create_note(text, classifier):
+    def save(text, classifier):
         note = Note(text=text, classifier=classifier)
         db.session.add(note)
         db.session.commit()
@@ -37,22 +38,36 @@ class Note(db.Model):
         return Note.query.filter(Note.created_date > datetime.datetime.now() - datetime.timedelta(days=days))
 
 
-class Auth(object):
+class Auth(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(250))
+    expiry_date = db.Column(db.DateTime)
+    access_token = db.Column(db.String(250))
+    refresh_token = db.Column(db.String(250))
+
+    def __repr__(self):
+        return '<Auth %r %r>' % (self.created_date, self.expiry_date)
 
     @staticmethod
-    def save(access_token, refresh_token, expiry):
-        # Session is totally a DB ;)
-        session['access_token'] = access_token
-        session['refresh_token'] = refresh_token
-        session['expiry_date'] = expiry
+    def save(user_id, access_token, refresh_token, expiry_date):
+        auth = Auth.get_auth(user_id)
+        if not auth:
+            auth = Auth()
+        auth.user_id = user_id
+        auth.access_token = access_token
+        auth.refresh_token = refresh_token
+        auth.expiry_date = datetime.datetime.fromtimestamp(int(expiry_date))
+
+        db.session.add(auth)
+        db.session.commit()
 
     @staticmethod
-    def get_access_token():
-        return session.get('access_token')
-
-    @staticmethod
-    def get_refresh_token():
-        return session.get('refresh_token')
+    def get_auth(user_id):
+        try:
+            auth = Auth.query.filter(Auth.user_id == user_id).one()
+        except NoResultFound:
+            auth = None
+        return auth
 
     @staticmethod
     def is_auth_expired():

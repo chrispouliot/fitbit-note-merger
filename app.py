@@ -8,7 +8,7 @@ from fitbit import complete_auth, get_authorize_url, get_food_log
 @app.errorhandler(Exception)
 def error(error):
     print(error)
-    return render_template('index.html', response="An error occured: {}".format(error), food=None, notes=None)
+    return render_template('index.html', response="An error occured: {}".format(error))
 
 
 @app.route('/')
@@ -16,7 +16,7 @@ def index():
     if 'user_id' not in session:
         return redirect(get_authorize_url())
     food_log = get_food_log(session.get('user_id'))
-    notes = Note.list_notes()
+    notes = Note.list_notes(days=3)
     return render_template('index.html', food=food_log, notes=notes)
 
 
@@ -41,4 +41,4 @@ def create_note():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False)

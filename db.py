@@ -25,16 +25,17 @@ class Note(db.Model):
     created_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     def __repr__(self):
-        return '<Note %r %r>' % (self.created_date, self.text)
+        return '<Note created[%r] text[%r]>' % (self.created_date, self.text)
 
     @staticmethod
     def save(text, classifier):
         note = Note(text=text, classifier=classifier)
         db.session.add(note)
         db.session.commit()
+        return note
 
     @staticmethod
-    def list_notes(days=3):
+    def list_notes(days=1):
         return Note.query.filter(Note.created_date > datetime.datetime.now() - datetime.timedelta(days=days))
 
 
@@ -46,7 +47,7 @@ class Auth(db.Model):
     refresh_token = db.Column(db.String(250))
 
     def __repr__(self):
-        return '<Auth %r %r>' % (self.created_date, self.expiry_date)
+        return '<Auth usr[%r] expiry[%r]>' % (self.user_id, self.expiry_date)
 
     @staticmethod
     def save(user_id, access_token, refresh_token, expiry_date):
@@ -60,6 +61,7 @@ class Auth(db.Model):
 
         db.session.add(auth)
         db.session.commit()
+        return auth
 
     @staticmethod
     def get_auth(user_id):

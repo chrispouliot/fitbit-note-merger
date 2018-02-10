@@ -11,12 +11,24 @@ from serializers import DailyFoodlogSerializer
 food_api_url = 'https://api.fitbit.com/1/user/{user_id}/foods/log/date/{date}.json'
 access_token_url = 'https://api.fitbit.com/oauth2/token'
 authorize_url = 'https://www.fitbit.com/oauth2/authorize'
-request_token_params = {
-    'client_id': fitbit_client_id,
-    'response_type': 'code',
-    'scope': 'activity nutrition profile sleep weight',
-    'expires_in': '2592000',  # 30 days
-}
+
+
+class BodyParameters(object):
+    REQUEST_TOKEN_PARAMS = {
+        'client_id': fitbit_client_id,
+        'response_type': 'code',
+        'scope': 'activity nutrition profile sleep weight',
+        'expires_in': '2592000',  # 30 days
+    }
+    COMPLETE_AUTH_PARAMS = {
+        'code': None,
+        'client_id': fitbit_client_id,
+        'grant_type': 'authorization_code',
+    }
+    REFRESH_AUTH_PARAMS = {
+        'refresh_token': None,
+        'grant_type': 'refresh_token',
+    }
 
 
 class FitbitError(Exception):
@@ -24,18 +36,14 @@ class FitbitError(Exception):
 
 
 def get_authorize_url():
-    return f'{authorize_url}?{urlencode(request_token_params, quote_via=quote_plus)}'
+    return f'{authorize_url}?{urlencode(BodyParameters.REQUEST_TOKEN_PARAMS, quote_via=quote_plus)}'
 
 
-def complete_auth(auth_code):
+def _send_auth(data):
     r = requests.post(
         access_token_url,
         auth=(fitbit_client_id, fitbit_client_secret),
-        data={
-            'code': auth_code,
-            'client_id': fitbit_client_id,
-            'grant_type': 'authorization_code',
-        }
+        data=data,
     )
 
     if r.status_code > 400:
@@ -47,43 +55,26 @@ def complete_auth(auth_code):
     now = datetime.datetime.now()
     expiry_date = now + datetime.timedelta(seconds=expires_in)
 
-    Auth.save(
+    return Auth.save(
         user_id=user_id,
         access_token=json.get('access_token'),
         refresh_token=json.get('refresh_token'),
         expiry_date=expiry_date.timestamp(),
     )
 
-    return user_id
+
+def complete_auth(auth_code):
+    data = BodyParameters.COMPLETE_AUTH_PARAMS
+    data['code'] = auth_code
+    auth = _send_auth(data)
+    return auth.user_id
 
 
 def refresh_token(user_id):
-    # TODO: Check if auth exists
     refresh_token = Auth.get_auth(user_id=user_id).refresh_token
-    print("Sending refresh token {}".format(refresh_token))
-    r = requests.post(
-        access_token_url,
-        auth=(fitbit_client_id, fitbit_client_secret),
-        data={
-            'grant_type': 'refresh_token',
-            'refresh_token': refresh_token,
-        }
-    )
-    if r.status_code >= 400:
-        raise FitbitError("We did a wrong! code:{} '{}'".format(r.status_code, r.text))
-    print(r.json())
-    # TODO: This code is all duplicated
-    json = r.json()
-    expires_in = json.get('expires_in')
-    now = datetime.datetime.now()
-    expiry_date = now + datetime.timedelta(seconds=expires_in)
-
-    Auth.save(
-        user_id=user_id,
-        access_token=json.get('access_token'),
-        refresh_token=json.get('refresh_token'),
-        expiry_date=expiry_date.timestamp(),
-    )
+    data = BodyParameters.REFRESH_AUTH_PARAMS
+    data['refresh_token'] = refresh_token
+    _send_auth(data)
 
 
 def get_food_log(user_id, retry_count=0):
@@ -95,7 +86,7 @@ def get_food_log(user_id, retry_count=0):
 
     r = requests.get(url, headers=headers)
     if r.status_code >= 400:
-        if r.status_code == 401 and retry_count < 2:
+        if r.status_code == 401 and retry_count < 1:
             print('Expired access token.. refreshing')
             refresh_token(user_id)
             return get_food_log(user_id, retry_count=1)

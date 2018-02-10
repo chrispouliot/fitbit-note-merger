@@ -1,19 +1,23 @@
+from datetime import datetime
+
+
 class NoteSerializer(object):
     pass
 
 
 class FoodLogSerializer(object):
     MEAL_MAP = {
-        1: 'Breakfast',
-        2: 'Morning Snack',
-        3: 'Lunch',
-        4: 'Afternoon Snack',
-        5: 'Dinner',
-        6: 'Evening Snack',
-        7: 'Anytime',
+        1: '08:30',
+        2: '10:30',
+        3: '12:30',
+        4: '15:00',
+        5: '18:30',
+        6: '20:00',
+        7: '',
     }
 
-    meal = ''
+    meal_time = ''
+    date = None
     calories = 0
     carbs = 0
     fat = 0
@@ -29,6 +33,7 @@ class FoodLogSerializer(object):
     }
 
     def __init__(self, *args, **kwargs):
+        self.date = kwargs['date']
         self.calories = kwargs['calories']
         self.carbs = kwargs['carbs']
         self.fat = kwargs['fat']
@@ -38,29 +43,32 @@ class FoodLogSerializer(object):
         self.name = kwargs['name']
         self.brand = kwargs['brand']
         self.unit = kwargs['unit']
-        self.meal = FoodLogSerializer.MEAL_MAP[kwargs['meal_id']]
+        self.meal_time = FoodLogSerializer.MEAL_MAP[kwargs['meal_id']]
 
     @staticmethod
     def from_json(json):
-        unit = json.get('unit', {})
-        unit['amount'] = json.get('amount', 0)
+        date = datetime.strptime(json.get('logDate'), '%Y-%m-%d')
+        food_json = json['loggedFood']
+        unit = food_json.get('unit', {})
+        unit['amount'] = food_json.get('amount', 0)
         return FoodLogSerializer(
-            calories=json.get('calories', 0),
-            carbs=json.get('carbs', 0),
-            fat=json.get('fat', 0),
-            fiber=json.get('fiber', 0),
-            protein=json.get('protein', 0),
-            sodium=json.get('sodium', 0),
-            name=json.get('name', ''),
-            brand=json.get('brand', ''),
-            meal_id=json.get('mealTypeId', 7),  # Default to 'Anytime'
+            date=date,
+            calories=food_json.get('calories', 0),
+            carbs=food_json.get('carbs', 0),
+            fat=food_json.get('fat', 0),
+            fiber=food_json.get('fiber', 0),
+            protein=food_json.get('protein', 0),
+            sodium=food_json.get('sodium', 0),
+            name=food_json.get('name', ''),
+            brand=food_json.get('brand', ''),
+            meal_id=food_json.get('mealTypeId', 7),  # Default to Fitbit's 'Anytime'
             unit=unit,
         )
 
 
 class DailyFoodlogSerializer(object):
-    food_logs = []  # Unordered FoodLog objects
-    meals = {meal_name: [] for meal_name in FoodLogSerializer.MEAL_MAP.values()}  # {'Breakfast': [], ...}
+    date = None
+    food_logs = []
     summary = {
         'calories': 0,
         'carbs': 0,
@@ -70,9 +78,9 @@ class DailyFoodlogSerializer(object):
         'sodium': 0,
     }
 
-    def __init__(self, food_logs, meals, summary):
+    def __init__(self, date, food_logs, summary):
+        self.date = date
         self.food_logs = food_logs
-        self.meals = meals
         self.summary = summary
 
     @staticmethod
@@ -80,13 +88,12 @@ class DailyFoodlogSerializer(object):
         summary = json.get('summary', {})
         summary.pop('water', None)
 
-        food_logs = [FoodLogSerializer.from_json(log_json['loggedFood']) for log_json in json['foods']]
-        meals = {}
-        for fl in food_logs:
-            meals.setdefault(fl.meal, []).append(fl)
+        food_logs = [FoodLogSerializer.from_json(log_json) for log_json in json['foods']]
+        # Use first individual logs date as full logs date
+        date = food_logs[0].date if food_logs else None
 
         return DailyFoodlogSerializer(
-            food_logs=food_logs,
-            meals=meals,
+            date=date,
+            food_logs=sorted(food_logs, key=lambda log: log.meal_time),
             summary=summary,
         )

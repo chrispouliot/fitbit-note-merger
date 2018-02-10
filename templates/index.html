@@ -21,14 +21,12 @@
 
     <div style="display: flex;">
       <div style="flex: 1;">
-        <ul style="list-style: none;">
           {% if food %}
-            {% for meal, food_logs in food.meals.items() %}
-              <li><h4>{{meal}}:</h4></li>
-              {% for food_log in food_logs %}
-                <li style="margin: 0.75em;">{{food_log.name}} <span style="font-size: 50%;float: right;">({{food_log.calories}} calories, {{food_log.unit['amount']}}{{food_log.unit['plural']}})</span></li>
+            <h3>{{food.date.strftime('%b %d')}}</h3> 
+            <ul style="list-style: none;">
+              {% for food_log in food.food_logs %}
+                <li style="margin: 0.75em;">{{food_log.meal_time}}: {{food_log.name}} <span style="font-size: 50%;float: right;">({{food_log.calories}} calories, {{food_log.unit['amount']}}{{food_log.unit['plural']}})</span></li>
               {% endfor %}
-            {% endfor %}
             </ul>
             <h2>Summary</h2>
             <ul style="list-style: none;width: 50%"> 

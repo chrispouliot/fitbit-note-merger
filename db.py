@@ -1,5 +1,5 @@
-
 import datetime
+import pytz
 
 from flask import session
 from flask_sqlalchemy import SQLAlchemy
@@ -22,21 +22,23 @@ class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(250))
     classifier = db.Column(ChoiceType(classifier_choices))
-    created_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    created_date = db.Column(db.DateTime)
 
     def __repr__(self):
         return '<Note created[%r] text[%r]>' % (self.created_date, self.text)
 
     @staticmethod
     def save(text, classifier):
-        note = Note(text=text, classifier=classifier)
+        note = Note(text=text, classifier=classifier, created_date=datetime.datetime.now(tz=pytz.utc))
         db.session.add(note)
         db.session.commit()
         return note
 
     @staticmethod
     def list_notes(days=1):
-        return Note.query.filter(Note.created_date > datetime.datetime.now() - datetime.timedelta(days=days))
+        return Note.query.filter(
+            Note.created_date > datetime.datetime.now() - datetime.timedelta(days=days)
+        ).order_by(Note.created_date.asc())
 
 
 class Auth(db.Model):

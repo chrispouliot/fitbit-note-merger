@@ -3,6 +3,7 @@ from flask import render_template, redirect, request, session
 from db import Note
 from config import app, port
 from fitbit import complete_auth, get_authorize_url, get_food_log
+from serializers import NoteSerializer
 
 
 @app.errorhandler(Exception)
@@ -17,7 +18,8 @@ def index():
         return redirect(get_authorize_url())
     food_log = get_food_log(session.get('user_id'))
     notes = Note.list_notes(days=3)
-    return render_template('index.html', food=food_log, notes=notes)
+    serialized_notes = [NoteSerializer(note) for note in notes]
+    return render_template('index.html', food=food_log, notes=serialized_notes)
 
 
 @app.route('/auth_callback')

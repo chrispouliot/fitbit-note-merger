@@ -1,12 +1,28 @@
 from datetime import datetime
+from pytz import timezone
 
 
 class NoteSerializer(object):
-    pass
+    _model = None
+
+    id = 0
+    text = ''
+    classifier = ''
+
+    def __init__(self, model):
+        self.model = model
+        self.id = model.id
+        self.text = model.text
+        self.classifier = model.classifier
+
+    @property
+    def created_date(self):
+        # Janky PST (temporary [famous last words])
+        return self.model.created_date.astimezone(timezone('US/Pacific'))
 
 
 class FoodLogSerializer(object):
-    MEAL_MAP = {
+    _MEAL_ID_TIME_MAP = {
         1: '08:30',
         2: '10:30',
         3: '12:30',
@@ -16,7 +32,6 @@ class FoodLogSerializer(object):
         7: '',
     }
 
-    meal_time = ''
     date = None
     calories = 0
     carbs = 0
@@ -43,14 +58,21 @@ class FoodLogSerializer(object):
         self.name = kwargs['name']
         self.brand = kwargs['brand']
         self.unit = kwargs['unit']
-        self.meal_time = FoodLogSerializer.MEAL_MAP[kwargs['meal_id']]
 
     @staticmethod
     def from_json(json):
-        date = datetime.strptime(json.get('logDate'), '%Y-%m-%d')
+        # Inner JSON. The original JSON contains useful metadata
         food_json = json['loggedFood']
+        # Format
+        meal_id = food_json.get('mealTypeId', 7)  # Default to Fitbit's 'Anytime'
+        meal_time = FoodLogSerializer._MEAL_ID_TIME_MAP[meal_id]
+        # Create a PST date for the FoodLog
+        naive_date = datetime.strptime('{} {}'.format(json.get('logDate'), meal_time), '%Y-%m-%d %H:%M')
+        date = timezone('US/Pacific').localize(naive_date)
+
         unit = food_json.get('unit', {})
         unit['amount'] = food_json.get('amount', 0)
+
         return FoodLogSerializer(
             date=date,
             calories=food_json.get('calories', 0),
@@ -61,7 +83,6 @@ class FoodLogSerializer(object):
             sodium=food_json.get('sodium', 0),
             name=food_json.get('name', ''),
             brand=food_json.get('brand', ''),
-            meal_id=food_json.get('mealTypeId', 7),  # Default to Fitbit's 'Anytime'
             unit=unit,
         )
 
@@ -86,14 +107,12 @@ class DailyFoodlogSerializer(object):
     @staticmethod
     def from_json(json):
         summary = json.get('summary', {})
-        summary.pop('water', None)
+        summary.pop('water', None)  # Don't need to display water
 
         food_logs = [FoodLogSerializer.from_json(log_json) for log_json in json['foods']]
-        # Use first individual logs date as full logs date
-        date = food_logs[0].date if food_logs else None
 
         return DailyFoodlogSerializer(
-            date=date,
-            food_logs=sorted(food_logs, key=lambda log: log.meal_time),
+            date=food_logs[0].date if food_logs else None,
+            food_logs=sorted(food_logs, key=lambda log: log.date),
             summary=summary,
         )
